@@ -26,7 +26,13 @@ public class SenserTestActivity extends Activity implements SensorEventListener{
     private float[] samplingX = new float[ELEMENT_COUNT];      //..................¢Ù
     private float[] samplingY = new float[ELEMENT_COUNT];
     private float[] samplingZ = new float[ELEMENT_COUNT];
+    private float[] orientation = {0,0,0};
+    private float[] angle = {0,0,0};
+    private float timestamp = 0.0f;
+    private int count = 0;
+    private float[] err = {0,0,0};
     private  final float FILTERING_VALAUE = 0.1f;
+    private static final float NS2S = 1.0f / 1000000000.0f;
     private float lowX,lowY,lowZ;
     private int position;
     @Override
@@ -71,10 +77,6 @@ public class SenserTestActivity extends Activity implements SensorEventListener{
             float y = e.values[sensorManager.DATA_Y];
             float z = e.values[sensorManager.DATA_Z];
             
-            
-//            lowX = x * FILTERING_VALAUE + lowX * (1.0f - FILTERING_VALAUE);  //..................¢Ú
-//            lowY = y * FILTERING_VALAUE + lowY * (1.0f - FILTERING_VALAUE);
-//            lowZ = z * FILTERING_VALAUE + lowZ * (1.0f - FILTERING_VALAUE);
             lowX = x;
             lowY = y;
             lowZ = z;
@@ -128,6 +130,38 @@ public class SenserTestActivity extends Activity implements SensorEventListener{
    		 TextView x = (TextView)findViewById(R.id.light);
             x.setText("Light:" + String.valueOf(e.values[SensorManager.DATA_X]));
    		 break;
+    	}
+    	case Sensor.TYPE_GYROSCOPE:{
+    		if(Math.abs(e.values[0]) + Math.abs(e.values[1]) + Math.abs(e.values[2]) < 0.06)
+    		{
+    			count++;
+	    		err[0] += e.values[0];//0.01637
+	    		err[1] += e.values[1];//-0.00796
+	    		err[2] += e.values[2];//-0.01500
+    		}
+    		if (timestamp > 1 && count > 100)
+    		{
+    			float dt = (e.timestamp - timestamp) * NS2S;
+
+    			angle[0] += (e.values[SensorManager.DATA_X] - err[0]/count) * dt;
+    			angle[1] += (e.values[SensorManager.DATA_Y] - err[1]/count) * dt;
+    			angle[2] += (e.values[SensorManager.DATA_Z] - err[2]/count) * dt;
+    			TextView x = (TextView)findViewById(R.id.gax);
+                x.setText("angle x:" + String.valueOf(angle[0] * 180 / Math.PI));
+                TextView y = (TextView)findViewById(R.id.gay);
+                y.setText("angle y:" + String.valueOf(angle[1] * 180 / Math.PI));
+                TextView z= (TextView)findViewById(R.id.gaz);
+                z.setText("angle z:" + String.valueOf(angle[2] * 180 / Math.PI));
+                
+    		}
+    		timestamp = e.timestamp;
+    		TextView x = (TextView)findViewById(R.id.gx);
+            x.setText("x:" + String.valueOf(e.values[SensorManager.DATA_X]));
+            TextView y = (TextView)findViewById(R.id.gy);
+            y.setText("y:" + String.valueOf(e.values[SensorManager.DATA_Y]));
+            TextView z= (TextView)findViewById(R.id.gz);
+            z.setText("z:" + String.valueOf(e.values[SensorManager.DATA_Z]));
+            break;
     	}
     	}
         
